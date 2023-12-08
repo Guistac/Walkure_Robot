@@ -10,7 +10,8 @@ private:
     uint8_t interrupt_pin = 34;
     uint8_t reset_pin = 33;
     uint8_t chipSelect_pin = 10;
-    float frequencyMHz = 434.0; //434.0->470.0Mhz
+    float bandwidthKHz = 125.0; //62.5->500.0KHz
+    float frequencyMHz;
 
 public:
 
@@ -18,7 +19,8 @@ public:
         rf95 = new RH_RF95(chipSelect_pin, interrupt_pin);
     }
 
-    bool initialize(){        
+    bool initialize(float configuredFrequencyMHz){   
+        frequencyMHz = configuredFrequencyMHz;     
         pinMode(reset_pin, OUTPUT);
         digitalWrite(reset_pin, LOW);
         delay(10);
@@ -26,34 +28,20 @@ public:
         delay(10);
 
         if(!rf95->init()) {
-            Serial.println("Unable to initialize radio.");
+            Serial.println("Radio Init() Failed.");
             return false;
         }
 
+        rf95->setSignalBandwidth(bandwidthKHz * 1000);   //smaller bandwidths are better for range, larger bandwidths are better for speed
+        rf95->setTxPower(23, false);  //23dBm is max
+        rf95->setPayloadCRC(false);   //we'll do our own CRC manually
+        rf95->setCodingRate4(5);      //5->8, default==5 lower is faster, higher is better for range, radios of different values seem to communicate with each other
+        rf95->setSpreadingFactor(7);  //6->12 default==7 lower is faster, higher is better for range, 6 doesn't seem to work, haven't tested higher values since they are real slow
 
-        // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
-        //these parameters are less interesting
-        rf95->setTxPower(23, false);        //23dBm is max
-        rf95->setPayloadCRC(false);         //we'll do our own CRC manually
-        rf95->setFrequency(frequencyMHz);   //400-460 MHz
-
-        rf95->setCodingRate4(5);            //5->8, default==5 lower is faster, higher is better for range
-        rf95->setSpreadingFactor(7);        //6->12 default==7 lower is faster, higher is better for range
-        rf95->setSignalBandwidth(125000);   //smaller bandwidths are better for range, larger bandwidths are better for speed
-        
-        /*
-        available bandwidths
-        7.8 KHZ  
-        10.4 KHZ 
-        15.6 KHZ 
-        20.8 KHZ 
-        31.25 KHZ
-        41.7 KHZ 
-        62.5 KHZ 
-        125 KHZ  
-        250 KHZ  
-        500 KHZ  
-        */
+        if(!rf95->setFrequency(frequencyMHz)){
+            Serial.printf("Could not set radio Frequency to %.1fMHz\n", frequencyMHz);
+            return false;
+        }
 
         Serial.println("Initialized Radio.");
 
@@ -61,7 +49,7 @@ public:
     }
 
     bool send(uint8_t* buffer, uint8_t length){
-        rf95->send(buffer, length);
+        return rf95->send(buffer, length);
     }
 
     bool receive(uint8_t* buffer, uint8_t length){
@@ -78,6 +66,8 @@ public:
     int16_t getSignalStrength(){
         return rf95->lastRssi();
     }
+
+    float getFrequency(){ return frequencyMHz; }
 
 private:
     RH_RF95* rf95;

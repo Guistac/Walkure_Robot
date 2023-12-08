@@ -121,8 +121,8 @@ public:
         digitalWrite(directionPin, b_directionState);
     }
 
-    void enable(){ digitalWrite(enablePin, LOW); }
-    void disable(){ digitalWrite(enablePin, HIGH); }
+    void enable(){ digitalWrite(enablePin, HIGH); }
+    void disable(){ digitalWrite(enablePin, LOW); }
 
     bool hasAlarm(){ return alarmInput.isLow(); }
     bool isEnabled(){ return pendingInput.isLow(); }
@@ -134,7 +134,6 @@ public:
     }
 
     float getVelocityLimit(){ return velocityLimit; }
-
 
 private:
 

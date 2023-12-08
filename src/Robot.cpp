@@ -18,6 +18,8 @@ namespace Robot{
         &servoBackRight
     };
 
+    Configuration configuration;
+
     bool areAllServosEnabled(){
         for(int i = 0; i < 4; i++){
             if(!servoMotors[i]->isEnabled()) return false;
@@ -33,35 +35,75 @@ namespace Robot{
     void disableAllMotors(){ for(int i = 0; i < 4; i++) servoMotors[i]->disable(); }
     void enableAllMotors(){ for(int i = 0; i < 4; i++) servoMotors[i]->enable(); }
     
-    State robotState = State::DISABLED;
+    State robotState = State::EMERGENCY_STOPPED;
     uint32_t enableRequestMillis;
+    float batteryVoltage = 0.0;
+
+    bool b_swapXandY = false;
+    bool b_invertX = false;
+    bool b_invertY = false;
+    bool b_invertR = false;
 
     State getState(){ return robotState; } 
+    float getBatteryVoltage(){ return batteryVoltage; }
 
 
-    void initialize(){
+    void startupError(){
+        pinMode(13, OUTPUT);
+        while(true){
+            digitalWrite(13, HIGH);
+            delay(250);
+            digitalWrite(13, LOW);
+            delay(250);
+        }
+    }
+
+
+    void initialize(Configuration& config){
 
         //while(!Serial){}
         Serial.println("———— Robot Start ————");
 
-        if(!radio.initialize()) Serial.println("Unable to initialize radio.");
-        if(!remote.initialize()) Serial.println("Unable to initialize remote");
-        
+        configuration = config;
+
+        if(!radio.initialize(config.radioFrequency_MHz)) {
+            Serial.println("Unable to initialize radio.");
+            startupError();
+        }
+        if(!remote.initialize()) {
+            Serial.println("Unable to initialize remote");
+            startupError();
+        }
+
+        MotionControl::Configuration motionConfiguration = {
+            .highSetting_translationVelocitLimit_mmps = config.highSetting_translationVelocitLimit,
+            .mediumSetting_translationVelocityLimit_mmps = config.mediumSetting_translationVelocityLimit,
+            .lowSetting_translationVelocityLimit_mmps = config.lowSetting_translationVelocityLimit,
+            .highSetting_rotationVelocityLimit_degps = config.highSetting_rotationVelocityLimit,
+            .mediumSetting_rotationVelocityLimit_degps = config.mediumSetting_rotationVelocityLimit,
+            .lowSetting_rotationVelocityLimit_degps = config.lowSetting_rotationVelocityLimit,
+            .translationAcceleration_mmpss = config.translationAcceleration_mmpss,
+            .rotationAcceleration_degpss = config.rotationAcceleration_degpss,
+            .translationEmergencyDeceleration_mmpss = config.translationEmergencyDeceleration_mmps,
+            .rotationEmergencyDeceleration_degpss = config.rotationEmergencyDeceleration_mmps
+        };
+        if(!MotionControl::initialize(motionConfiguration)){
+            Serial.println("Unable to initialize Motion Control");
+            startupError();
+        }
+
         servoFrontLeft.initialize([]{ servoFrontLeft.isr(); });
         servoBackLeft.initialize([]{ servoBackLeft.isr(); });
         servoFrontRight.initialize([]{ servoFrontRight.isr(); });
         servoBackRight.initialize([]{ servoBackRight.isr(); });
-        servoFrontLeft.wheelPosition_mm =  Vec2f(-291.5, -917.5);
-        servoBackLeft.wheelPosition_mm =   Vec2f(-291.5, 917.5);
-        servoFrontRight.wheelPosition_mm = Vec2f(291.5, -917.5);
-        servoBackRight.wheelPosition_mm =  Vec2f(291.5, 917.5);
-        double wheelDiameter_mm = 203.0;
-        double wheelCircumference_mm = PI * wheelDiameter_mm;
-        float frictionVectorUnit = sin(45.0) * wheelCircumference_mm;
-        servoFrontLeft.wheelFrictionVector_mmPerRev =   Vec2f(frictionVectorUnit, frictionVectorUnit);
-        servoBackLeft.wheelFrictionVector_mmPerRev =    Vec2f(-frictionVectorUnit, frictionVectorUnit);
-        servoFrontRight.wheelFrictionVector_mmPerRev =  Vec2f(frictionVectorUnit, -frictionVectorUnit);
-        servoBackRight.wheelFrictionVector_mmPerRev =   Vec2f(-frictionVectorUnit, -frictionVectorUnit);
+        servoFrontLeft.wheelPosition_mm =  config.frontLeft_wheelPosition;
+        servoBackLeft.wheelPosition_mm =   config.backLeft_wheelPosition;
+        servoFrontRight.wheelPosition_mm = config.frontRight_wheelPosition;
+        servoBackRight.wheelPosition_mm =  config.backRight_wheelPosition;
+        servoFrontLeft.wheelFrictionVector_mmPerRev =   config.frontLeft_wheelFrictionVector;
+        servoBackLeft.wheelFrictionVector_mmPerRev =    config.backLeft_wheelFrictionVector;
+        servoFrontRight.wheelFrictionVector_mmPerRev =  config.frontRight_wheelFrictionVector;
+        servoBackRight.wheelFrictionVector_mmPerRev =   config.backRight_wheelFrictionVector;
         for(int i = 0; i < 4; i++) servoMotors[i]->disable();
 
         pinMode(25, INPUT);
@@ -70,9 +112,6 @@ namespace Robot{
         Serial.println("Robot initialized.");
     }
 
-    float batteryVoltage = 0.0;
-
-    float getBatteryVoltage(){ return batteryVoltage; }
 
     void update(){
 
@@ -92,6 +131,18 @@ namespace Robot{
                 robotState = State::EMERGENCY_STOPPING;
                 Serial.println("——— Emergency Stop Requested.");
             }
+        }
+
+        switch(Robot::remote.speedMode){
+            case 0:
+                MotionControl::setSpeedMode(MotionControl::SpeedMode::MEDIUM_SPEED);
+                break;
+            case 1:
+                MotionControl::setSpeedMode(MotionControl::SpeedMode::HIGH_SPEED);
+                break;
+            case 2:
+                MotionControl::setSpeedMode(MotionControl::SpeedMode::LOW_SPEED);
+                break;
         }
 
         switch(robotState){
@@ -119,7 +170,16 @@ namespace Robot{
                     else if(!remote.b_isConnected)      Serial.println("——— Disabling Robot : Remote was disconnected.");
                     else if(remote.b_disable)           Serial.println("——— Disabling Robot by user request.");
                 }
-                else MotionControl::setControlTargetsNormalized(-remote.leftJoystickX, remote.leftJoystickY, -remote.rightJoystickX);
+                else {
+                    float xCommand = remote.leftJoystickX;
+                    float yCommand = remote.leftJoystickY;
+                    float rCommand = remote.rightJoystickX;
+                    if(configuration.b_swapXandY) std::swap(xCommand, yCommand);
+                    if(configuration.b_invertX) xCommand = -xCommand;
+                    if(configuration.b_invertY) yCommand = -yCommand;
+                    if(configuration.b_invertR) rCommand = -rCommand;
+                    MotionControl::setControlTargetsNormalized(xCommand, yCommand, rCommand);
+                }
             }break;
             case State::DISABLING:{
                 MotionControl::setControlTargetsNormalized(0.0, 0.0, 0.0);
@@ -161,6 +221,8 @@ namespace Robot{
         if(b_processDataReceived) remote.sendProcessData();
 
     }
+
+
 
     void pinTest(){
 

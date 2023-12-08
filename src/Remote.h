@@ -11,25 +11,21 @@ public:
 
     bool b_disable = false;
     bool b_enable = false;
-    bool b_speedToggle = false;
-    bool b_sleepToggle = false;
-    uint8_t modeToggle = 0;
+    uint8_t speedMode = 0;
+    bool b_modeToggle = false;
+    bool b_leftButton = false;
+    bool b_rightButton = false;
+
     float leftJoystickX = 0.0;
     float leftJoystickY = 0.0;
     float rightJoystickX = 0.0;
     float rightJoystickY = 0.0;
+
     bool b_safetyClear = false;
 
-    uint32_t lastProcessDataReceiveMillis;
-    uint32_t processDataTimeoutMillis = 250;
-
-    uint32_t lastSafetyDataReceiveMillis;
-    uint32_t safetyDataTimeoutMillis = 500;
-
     bool b_isConnected = false;
+    uint32_t lastProcessDataReceiveMillis;
+    uint32_t processDataTimeoutMillis = 400;
     float signalStrength = 0.0;
-    float signalToNoise = 0.0;
-
     uint8_t messageCounter = 0;
-
 };

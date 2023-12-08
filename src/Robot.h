@@ -39,7 +39,41 @@ namespace Robot{
     extern ServoMotor servoBackRight;
     extern ServoMotor* servoMotors[4];
 
-    void initialize();
+
+    struct Configuration{
+
+        double radioFrequency_MHz = 434.0;
+
+        double highSetting_translationVelocitLimit = 0.0;
+        double mediumSetting_translationVelocityLimit = 0.0;
+        double lowSetting_translationVelocityLimit = 0.0;
+        double highSetting_rotationVelocityLimit = 0.0;
+        double mediumSetting_rotationVelocityLimit = 0.0;
+        double lowSetting_rotationVelocityLimit = 0.0;
+
+        double translationAcceleration_mmpss = 0.0;
+        double rotationAcceleration_degpss = 0.0;
+        double translationEmergencyDeceleration_mmps = 0.0;
+        double rotationEmergencyDeceleration_mmps = 0.0;
+
+        Vec2f frontLeft_wheelPosition;
+        Vec2f backLeft_wheelPosition;
+        Vec2f frontRight_wheelPosition;
+        Vec2f backRight_wheelPosition;
+
+        Vec2f frontLeft_wheelFrictionVector;
+        Vec2f backLeft_wheelFrictionVector;
+        Vec2f frontRight_wheelFrictionVector;
+        Vec2f backRight_wheelFrictionVector;
+
+        bool b_swapXandY = false;
+        bool b_invertX = false;
+        bool b_invertY = false;
+        bool b_invertR = false;
+    };
+
+
+    void initialize(Configuration& config);
     void update();
 
     float getBatteryVoltage();

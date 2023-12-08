@@ -2,18 +2,30 @@
 
 namespace MotionControl{
 
-    const float translVelLim_mmPerSec = 600.0;
-    const float rotVelLim_degPerSec = 60.0;
-    const float translAcc_mmPerSecSq = 400.0;
-    const float rotAcc_degPerSecSq = 30.0;
-    const float translEmergencyAcc_mmPerSecSq = 1000.0;
-    const float rotEmergencyAcc_degPerSecSq = 100.0;
+    float translVelLim_mmPerSec = 0.0;
+    float rotVelLim_degPerSec = 0.0;
 
     float xVelTarg_mmPerSec = 0.0;
     float yVelTarg_mmPerSec = 0.0;
     float rotVelTarg_degPerSec = 0.0;
     float translAccTarget_mmPerSecSq = 0.0;
     float rotAccTarget_degPerSecSq = 0.0;
+
+    Configuration configuration;
+    SpeedMode currentSpeedMode = SpeedMode::MEDIUM_SPEED;
+
+
+    bool initialize(Configuration& config){
+        if(config.translationAcceleration_mmpss <= 0.0) return false;
+        else if(config.rotationAcceleration_degpss <= 0.0) return false;
+        else if(config.translationEmergencyDeceleration_mmpss <= 0.0) return false;
+        else if(config.rotationEmergencyDeceleration_degpss <= 0.0) return false;
+
+        configuration = config;
+        setSpeedMode(SpeedMode::LOW_SPEED);
+        return true;
+    }
+
 
     void setControlTargetsNormalized(float x, float y, float r){
         xVelTarg_mmPerSec = map(x, -1.0, 1.0, -translVelLim_mmPerSec, translVelLim_mmPerSec);
@@ -25,13 +37,36 @@ namespace MotionControl{
         yVelTarg_mmPerSec = max(yVelTarg_mmPerSec, -translVelLim_mmPerSec);
         rotVelTarg_degPerSec = min(rotVelTarg_degPerSec, rotVelLim_degPerSec);
         rotVelTarg_degPerSec = max(rotVelTarg_degPerSec, -rotVelLim_degPerSec);
-        translAccTarget_mmPerSecSq = translAcc_mmPerSecSq;
-        rotAccTarget_degPerSecSq = rotAcc_degPerSecSq;
+        translAccTarget_mmPerSecSq = configuration.translationAcceleration_mmpss;
+        rotAccTarget_degPerSecSq = configuration.rotationAcceleration_degpss;
+    }
+
+    void setSpeedMode(SpeedMode mode){
+        if(mode != currentSpeedMode){
+            currentSpeedMode = mode;
+            switch(mode){
+                case SpeedMode::LOW_SPEED:
+                    translVelLim_mmPerSec = configuration.lowSetting_translationVelocityLimit_mmps;
+                    rotVelLim_degPerSec = configuration.lowSetting_rotationVelocityLimit_degps;
+                    Serial.println("--- Changed speed mode to LOW");
+                    break;
+                case SpeedMode::MEDIUM_SPEED:
+                    translVelLim_mmPerSec = configuration.mediumSetting_translationVelocityLimit_mmps;
+                    rotVelLim_degPerSec = configuration.mediumSetting_rotationVelocityLimit_degps;
+                    Serial.println("--- Changed speed mode to MEDIUM");
+                    break;
+                case SpeedMode::HIGH_SPEED:
+                    translVelLim_mmPerSec = configuration.highSetting_translationVelocitLimit_mmps;
+                    rotVelLim_degPerSec = configuration.highSetting_rotationVelocityLimit_degps;
+                    Serial.println("--- Changed speed mode to HIGH");
+                    break;
+            }
+        }
     }
 
     void requestEmergencyDeceleration(){
-        translAccTarget_mmPerSecSq = translEmergencyAcc_mmPerSecSq;
-        rotAccTarget_degPerSecSq = rotEmergencyAcc_degPerSecSq;
+        translAccTarget_mmPerSecSq = configuration.translationEmergencyDeceleration_mmpss;
+        rotAccTarget_degPerSecSq = configuration.rotationEmergencyDeceleration_degpss;
         xVelTarg_mmPerSec = 0.0;
         yVelTarg_mmPerSec = 0.0;
         rotVelTarg_degPerSec = 0.0;
@@ -168,6 +203,8 @@ namespace MotionControl{
             //wheel position relative to rotation center
             Vec2f relativeWheelPosition = Robot::servoMotors[i]->wheelPosition_mm;
 
+            //Serial.printf("%.1f %.1f ", relativeWheelPosition.x, relativeWheelPosition.y);
+
             float rotationRadius = sqrt(sq(relativeWheelPosition.x) + sq(relativeWheelPosition.y));
             float rotationCirclePerimeter = 2.0 * PI * rotationRadius;
             float rotationVectorMagnitude = rotationCirclePerimeter * rotVelActual_degPerSec / 360.0;
@@ -191,10 +228,14 @@ namespace MotionControl{
                 wheelRotationVector.y = 0.0;
             }
 
+            //Serial.printf("%.2f %.2f\n", wheelRotationVector.x / Robot::servoMotors[i]->wheelFrictionVector_mmPerRev.x, wheelRotationVector.y / Robot::servoMotors[i]->wheelFrictionVector_mmPerRev.y);
+
             //decompose the rotation vector and add to wheel velocity
             wheelVelocity[i] += wheelRotationVector.x / Robot::servoMotors[i]->wheelFrictionVector_mmPerRev.x;
             wheelVelocity[i] += wheelRotationVector.y / Robot::servoMotors[i]->wheelFrictionVector_mmPerRev.y;
         }
+
+        //Serial.println();
 
         for(int i = 0; i < 4; i++) Robot::servoMotors[i]->setVelocityTarget(wheelVelocity[i]);
 

@@ -9,71 +9,69 @@ bool Remote::initialize(){
 }
 
 bool Remote::receiveProcessData(){
-    uint8_t incomingFrame[12];
-
-    bool frameReceived = false;
-
-    if(Robot::radio.receive(incomingFrame, 12)) {
-
-        frameReceived = true;
-        uint8_t* processDataBuffer = &incomingFrame[0]; //8 bytes in here
-        uint8_t* safetyDataBuffer = &incomingFrame[8]; //4 bytes in here
-
-        //———— Process Data
-        uint16_t processDataCRC = processDataBuffer[7] << 8 | processDataBuffer[6];
-        if(processDataCRC == calcCRC16(processDataBuffer, 6)){
-            uint8_t controlWord = processDataBuffer[0];
-            b_disable =  controlWord & 0x1;
-            b_enable =   controlWord & 0x2;
-            b_speedToggle =    controlWord & 0x4;
-            modeToggle =    (controlWord & 0x18) >> 3;
-            b_sleepToggle =    controlWord |= 0x20;
-            if(processDataBuffer[1] == 127) leftJoystickX = 0.0;
-            else leftJoystickX = map((float)processDataBuffer[1], 0.0, 255.0, -1.0, 1.0);
-            if(processDataBuffer[2] == 127) leftJoystickY = 0.0;
-            else leftJoystickY = map((float)processDataBuffer[2], 0.0, 255.0, -1.0, 1.0);
-            if(processDataBuffer[3] == 127) rightJoystickX = 0.0;
-            else rightJoystickX = map((float)processDataBuffer[3], 0.0, 255.0, -1.0, 1.0);
-            if(processDataBuffer[4] == 127) rightJoystickY = 0.0;
-            else rightJoystickY = map((float)processDataBuffer[4], 0.0, 255.0, -1.0, 1.0);
-            messageCounter = processDataBuffer[5];
-            lastProcessDataReceiveMillis = millis();
-
-            if(!b_isConnected){
-                b_isConnected = true;
-                Serial.println("——— Remote Connected.");
-            }
-        }
-
-        //———— Safety Data
-        uint16_t safetyDataCRC = safetyDataBuffer[3] << 8 | safetyDataBuffer[2];
-        if(calcCRC16(safetyDataBuffer, 2) == safetyDataCRC){
-            uint16_t safetyNumber = safetyDataBuffer[1] << 8 | safetyDataBuffer[0];
-            b_safetyClear = Safety::isNumberClear(safetyNumber);
-            lastSafetyDataReceiveMillis = millis();
-        }
-
-    }
 
     if(millis() - lastProcessDataReceiveMillis > processDataTimeoutMillis) {
         if(b_isConnected){
             b_isConnected = false;
+            b_safetyClear = false;
             Serial.println("——— Remote Connection Timed Out.");
         }
     }
-    if(millis() - lastSafetyDataReceiveMillis > safetyDataTimeoutMillis){
-        if(b_safetyClear){
-            b_safetyClear = false;
-            Serial.println("——— Safety Data Timed Out.");;
-        }
-    } 
 
-    return frameReceived;
+    uint8_t incomingFrame[11];
+    if(Robot::radio.receive(incomingFrame, 11)) {
+
+        //———— Process Data
+        uint16_t receivedCRC = incomingFrame[10] << 8 | incomingFrame[9];
+
+        if(receivedCRC == calcCRC16(incomingFrame, 9)){
+
+            uint8_t expectedNodeID = incomingFrame[0];
+            uint8_t nodeID = int(Robot::radio.getFrequency()) % 255;
+
+            if(expectedNodeID != nodeID){
+                Serial.printf("Frame received from wrong nodeID %i and not %i (%i)\n", nodeID, expectedNodeID, millis());
+                return false;
+            }
+
+            lastProcessDataReceiveMillis = millis();
+            if(!b_isConnected){
+                b_isConnected = true;
+                Serial.println("——— Remote Connected.");
+            }
+
+            uint8_t controlWord = incomingFrame[1];
+            b_disable =     controlWord & 0x1;
+            b_enable =      controlWord & 0x2;
+            speedMode =     (controlWord >> 2) & 0x3;
+            b_modeToggle =  controlWord & 0x10;
+            b_leftButton =  controlWord & 0x20;
+            b_rightButton = controlWord & 0x40;
+
+            if(incomingFrame[2] == 127) leftJoystickX = 0.0;
+            else leftJoystickX = map((float)incomingFrame[2], 0.0, 255.0, -1.0, 1.0);
+            if(incomingFrame[3] == 127) leftJoystickY = 0.0;
+            else leftJoystickY = map((float)incomingFrame[3], 0.0, 255.0, -1.0, 1.0);
+            if(incomingFrame[4] == 127) rightJoystickX = 0.0;
+            else rightJoystickX = map((float)incomingFrame[4], 0.0, 255.0, -1.0, 1.0);
+            if(incomingFrame[5] == 127) rightJoystickY = 0.0;
+            else rightJoystickY = map((float)incomingFrame[5], 0.0, 255.0, -1.0, 1.0);
+
+            messageCounter = incomingFrame[6];
+
+            uint16_t safetyNumber = incomingFrame[8] << 8 | incomingFrame[7];
+            b_safetyClear = Safety::isNumberClear(safetyNumber);
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 void Remote::sendProcessData(){
 
-    uint8_t outgoingFrame[10];
+    uint8_t outgoingFrame[11];
 
     uint8_t robotStatusWord = uint8_t(Robot::getState()) & 0xF;
     bool b_modeDisplay = false;
@@ -98,18 +96,21 @@ void Remote::sendProcessData(){
     uint8_t receivedSignalStrength = Robot::radio.getSignalStrength() + 150;
     uint8_t batteryVoltage = millis() % 255;
 
-    outgoingFrame[0] = robotStatusWord;
-    outgoingFrame[1] = motorStatusWord;
-    outgoingFrame[2] = xVelocity;
-    outgoingFrame[3] = yVelocity;
-    outgoingFrame[4] = rVelocity;
-    outgoingFrame[5] = receivedSignalStrength;
-    outgoingFrame[6] = batteryVoltage;
-    outgoingFrame[7] = messageCounter;
+    uint8_t nodeID = int(Robot::radio.getFrequency()) % 255;
+    outgoingFrame[0] = nodeID;
 
-    uint16_t processDataCRC = calcCRC16(outgoingFrame, 8);
-    outgoingFrame[8] = processDataCRC;
-    outgoingFrame[9] = processDataCRC >> 8;
+    outgoingFrame[1] = robotStatusWord;
+    outgoingFrame[2] = motorStatusWord;
+    outgoingFrame[3] = xVelocity;
+    outgoingFrame[4] = yVelocity;
+    outgoingFrame[5] = rVelocity;
+    outgoingFrame[6] = receivedSignalStrength;
+    outgoingFrame[7] = batteryVoltage;
+    outgoingFrame[8] = messageCounter;
 
-    Robot::radio.send(outgoingFrame, 10);
+    uint16_t processDataCRC = calcCRC16(outgoingFrame, 9);
+    outgoingFrame[9] = processDataCRC;
+    outgoingFrame[10] = processDataCRC >> 8;
+
+    Robot::radio.send(outgoingFrame, 11);
 }
