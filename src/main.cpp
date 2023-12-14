@@ -7,7 +7,9 @@ double wheelCircumference_mm = PI * wheelDiameter_mm;
 float frictionVectorUnit = sin(45.0) * wheelCircumference_mm;
 
 Robot::Configuration bed_robot = {
-  .radioFrequency_MHz = 430.0,
+  .radioFrequency_MHz = 433.3,
+  .radioBandwidth_KHz = 250.0,
+  .radioSpreadingFactor = 7,
   .highSetting_translationVelocitLimit = 400.0,
   .mediumSetting_translationVelocityLimit = 200.0,
   .lowSetting_translationVelocityLimit = 100.0,
@@ -33,7 +35,9 @@ Robot::Configuration bed_robot = {
 };
 
 Robot::Configuration desk_robot = {
-  .radioFrequency_MHz = 435.0,
+  .radioFrequency_MHz = 421.2,
+  .radioBandwidth_KHz = 250.0,
+  .radioSpreadingFactor = 7,
   .highSetting_translationVelocitLimit = 400.0,
   .mediumSetting_translationVelocityLimit = 200.0,
   .lowSetting_translationVelocityLimit = 100.0,
@@ -59,7 +63,9 @@ Robot::Configuration desk_robot = {
 };
 
 Robot::Configuration fridge_robot = {
-  .radioFrequency_MHz = 440.0,
+  .radioFrequency_MHz = 436.1,
+  .radioBandwidth_KHz = 250.0,
+  .radioSpreadingFactor = 8,
   .highSetting_translationVelocitLimit = 400.0,
   .mediumSetting_translationVelocityLimit = 200.0,
   .lowSetting_translationVelocityLimit = 100.0,
@@ -78,14 +84,16 @@ Robot::Configuration fridge_robot = {
   .backLeft_wheelFrictionVector = Vec2f(-frictionVectorUnit, frictionVectorUnit),
   .frontRight_wheelFrictionVector = Vec2f(frictionVectorUnit, -frictionVectorUnit),
   .backRight_wheelFrictionVector = Vec2f(-frictionVectorUnit, -frictionVectorUnit),
-  .b_swapXandY = false,
-  .b_invertX = true,
+  .b_swapXandY = true,
+  .b_invertX = false,
   .b_invertY = false,
   .b_invertR = true
 };
 
 Robot::Configuration closet_robot = {
-  .radioFrequency_MHz = 445.0,
+  .radioFrequency_MHz = 436.7,
+  .radioBandwidth_KHz = 125.0,
+  .radioSpreadingFactor = 7,
   .highSetting_translationVelocitLimit = 400.0,
   .mediumSetting_translationVelocityLimit = 200.0,
   .lowSetting_translationVelocityLimit = 100.0,
@@ -112,9 +120,9 @@ Robot::Configuration closet_robot = {
 
 
 void setup(){
-  //Robot::initialize(bed_robot);
+  Robot::initialize(bed_robot);
   //Robot::initialize(desk_robot);
-  Robot::initialize(fridge_robot);
+  //Robot::initialize(fridge_robot);
   //Robot::initialize(closet_robot);
 }
 

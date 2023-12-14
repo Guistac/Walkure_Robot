@@ -66,7 +66,7 @@ namespace Robot{
 
         configuration = config;
 
-        if(!radio.initialize(config.radioFrequency_MHz)) {
+        if(!radio.initialize(config.radioFrequency_MHz, config.radioBandwidth_KHz, config.radioSpreadingFactor)) {
             Serial.println("Unable to initialize radio.");
             startupError();
         }

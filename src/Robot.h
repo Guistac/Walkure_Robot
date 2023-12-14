@@ -43,6 +43,8 @@ namespace Robot{
     struct Configuration{
 
         double radioFrequency_MHz = 434.0;
+        double radioBandwidth_KHz = 125.0;
+        int radioSpreadingFactor = 7;
 
         double highSetting_translationVelocitLimit = 0.0;
         double mediumSetting_translationVelocityLimit = 0.0;
