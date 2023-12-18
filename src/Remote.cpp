@@ -18,26 +18,28 @@ bool Remote::receiveProcessData(){
         }
     }
 
-    uint8_t incomingFrame[11];
-    if(!Robot::radio.receive(incomingFrame, 11)) return false;
+    uint8_t incomingFrameSize = 7;
+    uint8_t incomingFrame[incomingFrameSize];
+    uint8_t actualFrameSize = incomingFrameSize;
+    Radio::ReceptionResult result = Robot::radio.receive(incomingFrame, incomingFrameSize);
 
-    //———— Process Data
-    uint16_t receivedCRC = incomingFrame[10] << 8 | incomingFrame[9];
-
-    if(receivedCRC != calcCRC16(incomingFrame, 9)) {
-        Serial.printf("Receive Corrupted Frame (%i)\n", millis());
+    if(incomingFrameSize != actualFrameSize){
         return false;
     }
 
-    uint8_t expectedNodeID = incomingFrame[0];
-    uint8_t nodeID = int(Robot::radio.getFrequency() * 10.0) % 255;
-
-    if(expectedNodeID != nodeID){
-        Serial.printf("Frame received from wrong nodeID %i and not %i (%i)\n", nodeID, expectedNodeID, millis());
-        return false;
+    switch(result){
+        case Radio::ReceptionResult::NOTHING_RECEIVED:
+            return false;
+        case Radio::ReceptionResult::BAD_CRC:
+            Serial.printf("Receive Corrupted Frame (%i)\n", millis());
+            return false;
+        case Radio::ReceptionResult::BAD_NODEID:
+            Serial.printf("Frame received from wrong nodeID (%i)\n", millis());
+            return false;
+        case Radio::ReceptionResult::GOOD_RECEPTION:
+            Serial.printf("Valid Frame Received (%i)\n", millis());
+            break;
     }
-
-    Serial.printf("Valid Frame Received (%i)\n", millis());
 
     lastProcessDataReceiveMillis = millis();
     if(!b_isConnected){
@@ -45,7 +47,7 @@ bool Remote::receiveProcessData(){
         Serial.println("——— Remote Connected.");
     }
 
-    uint8_t controlWord = incomingFrame[1];
+    uint8_t controlWord = incomingFrame[0];
     b_disable =     controlWord & 0x1;
     b_enable =      controlWord & 0x2;
     speedMode =     (controlWord >> 2) & 0x3;
@@ -53,26 +55,22 @@ bool Remote::receiveProcessData(){
     b_leftButton =  controlWord & 0x20;
     b_rightButton = controlWord & 0x40;
 
-    if(incomingFrame[2] == 127) leftJoystickX = 0.0;
+    if(incomingFrame[1] == 127) leftJoystickX = 0.0;
     else leftJoystickX = map((float)incomingFrame[2], 0.0, 255.0, -1.0, 1.0);
-    if(incomingFrame[3] == 127) leftJoystickY = 0.0;
+    if(incomingFrame[2] == 127) leftJoystickY = 0.0;
     else leftJoystickY = map((float)incomingFrame[3], 0.0, 255.0, -1.0, 1.0);
-    if(incomingFrame[4] == 127) rightJoystickX = 0.0;
+    if(incomingFrame[3] == 127) rightJoystickX = 0.0;
     else rightJoystickX = map((float)incomingFrame[4], 0.0, 255.0, -1.0, 1.0);
-    if(incomingFrame[5] == 127) rightJoystickY = 0.0;
+    if(incomingFrame[4] == 127) rightJoystickY = 0.0;
     else rightJoystickY = map((float)incomingFrame[5], 0.0, 255.0, -1.0, 1.0);
 
-    messageCounter = incomingFrame[6];
-
-    uint16_t safetyNumber = incomingFrame[8] << 8 | incomingFrame[7];
+    uint16_t safetyNumber = incomingFrame[6] << 8 | incomingFrame[5];
     b_safetyClear = Safety::isNumberClear(safetyNumber);
 
     return true;
 }
 
 void Remote::sendProcessData(){
-
-    uint8_t outgoingFrame[11];
 
     uint8_t robotStatusWord = uint8_t(Robot::getState()) & 0xF;
     bool b_modeDisplay = false;
@@ -97,21 +95,23 @@ void Remote::sendProcessData(){
     uint8_t receivedSignalStrength = Robot::radio.getSignalStrength() + 150;
     uint8_t batteryVoltage = millis() % 255;
 
-    uint8_t nodeID = int(Robot::radio.getFrequency() * 10) % 255;
-    outgoingFrame[0] = nodeID;
+    uint8_t outgoingFrameSize = 7;
+    uint8_t outgoingFrame[outgoingFrameSize];
+    outgoingFrame[0] = robotStatusWord;
+    outgoingFrame[1] = motorStatusWord;
+    outgoingFrame[2] = xVelocity;
+    outgoingFrame[3] = yVelocity;
+    outgoingFrame[4] = rVelocity;
+    outgoingFrame[5] = receivedSignalStrength;
+    outgoingFrame[6] = batteryVoltage;
 
-    outgoingFrame[1] = robotStatusWord;
-    outgoingFrame[2] = motorStatusWord;
-    outgoingFrame[3] = xVelocity;
-    outgoingFrame[4] = yVelocity;
-    outgoingFrame[5] = rVelocity;
-    outgoingFrame[6] = receivedSignalStrength;
-    outgoingFrame[7] = batteryVoltage;
-    outgoingFrame[8] = messageCounter;
+    //linear velocity
+    //translation angle
+    //rotational velocity
+    //front left velocity
+    //front right velocity
+    //back left velocity
+    //back right velocity
 
-    uint16_t processDataCRC = calcCRC16(outgoingFrame, 9);
-    outgoingFrame[9] = processDataCRC;
-    outgoingFrame[10] = processDataCRC >> 8;
-
-    Robot::radio.send(outgoingFrame, 11);
+    Robot::radio.send(outgoingFrame, outgoingFrameSize);
 }

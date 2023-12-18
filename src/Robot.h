@@ -29,6 +29,16 @@
 #define PEN_4_BR 37
 #define ALM_4_BR 36
 
+//T4.0 Test Board
+#define RADIO_INTERRUPT 9
+#define RADIO_RESET 7
+#define RADIO_CHIPSELECT 10
+
+//T4.1 Motion Control Boards
+//#define RADIO_INTERRUPT 34
+//#define RADIO_RESET 33
+//#define RADIO_CHIPSELECT 10
+
 namespace Robot{
 
     extern Radio radio;
