@@ -7,9 +7,9 @@ double wheelCircumference_mm = PI * wheelDiameter_mm;
 float frictionVectorUnit = sin(45.0) * wheelCircumference_mm;
 
 Robot::Configuration bed_robot = {
-  .radioFrequency_MHz = 433.3,
+  .radioFrequency_MHz = 520.0,
   .radioBandwidth_KHz = 250.0,
-  .radioSpreadingFactor = 7,
+  .radioSpreadingFactor = 8,
   .highSetting_translationVelocitLimit = 400.0,
   .mediumSetting_translationVelocityLimit = 200.0,
   .lowSetting_translationVelocityLimit = 100.0,
@@ -35,8 +35,8 @@ Robot::Configuration bed_robot = {
 };
 
 Robot::Configuration desk_robot = {
-  .radioFrequency_MHz = 421.2,
-  .radioBandwidth_KHz = 250.0,
+  .radioFrequency_MHz = 485.0,
+  .radioBandwidth_KHz = 125.0,
   .radioSpreadingFactor = 7,
   .highSetting_translationVelocitLimit = 400.0,
   .mediumSetting_translationVelocityLimit = 200.0,
@@ -63,7 +63,7 @@ Robot::Configuration desk_robot = {
 };
 
 Robot::Configuration fridge_robot = {
-  .radioFrequency_MHz = 436.1,
+  .radioFrequency_MHz = 450.0,
   .radioBandwidth_KHz = 250.0,
   .radioSpreadingFactor = 8,
   .highSetting_translationVelocitLimit = 400.0,
@@ -91,7 +91,7 @@ Robot::Configuration fridge_robot = {
 };
 
 Robot::Configuration closet_robot = {
-  .radioFrequency_MHz = 436.7,
+  .radioFrequency_MHz = 415.0,
   .radioBandwidth_KHz = 125.0,
   .radioSpreadingFactor = 7,
   .highSetting_translationVelocitLimit = 400.0,
@@ -120,10 +120,10 @@ Robot::Configuration closet_robot = {
 
 
 void setup(){
-  Robot::initialize(bed_robot);
+  //Robot::initialize(bed_robot);
   //Robot::initialize(desk_robot);
   //Robot::initialize(fridge_robot);
-  //Robot::initialize(closet_robot);
+  Robot::initialize(closet_robot);
 }
 
 void loop(){
