@@ -37,7 +37,7 @@ bool Remote::receiveProcessData(){
             Serial.printf("Frame received from wrong nodeID (%i)\n", millis());
             return false;
         case Radio::ReceptionResult::GOOD_RECEPTION:
-            Serial.printf("Valid Frame Received (%i)\n", millis());
+            //Serial.printf("Valid Frame Received (%i)\n", millis());
             break;
     }
 

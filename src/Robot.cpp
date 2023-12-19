@@ -5,7 +5,7 @@
 
 namespace Robot{
 
-    Radio radio(Radio::TranscieverType::SLAVE, RADIO_RESET, RADIO_CHIPSELECT, RADIO_INTERRUPT);
+    Radio radio(Radio::TranscieverType::SLAVE, Radio::FrequencyRange::MHZ_433, RADIO_RESET, RADIO_CHIPSELECT, RADIO_INTERRUPT);
     Remote remote;
     ServoMotor servoFrontLeft(PUL_1_FL, DIR_1_FL, ENA_1_FL, ALM_1_FL, PEN_1_FL);
     ServoMotor servoBackLeft(PUL_2_BL, DIR_2_BL, ENA_2_BL, ALM_2_BL, PEN_2_BL);

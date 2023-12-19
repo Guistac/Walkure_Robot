@@ -13,9 +13,29 @@ public:
         SLAVE
     };
 
-    Radio(TranscieverType type, uint8_t resetPin, uint8_t chipSelectPin, uint8_t interruptPin){
+    enum class FrequencyRange{
+        MHZ_433,
+        MHZ_868,
+        MHZ_915
+    };
+
+    Radio(TranscieverType type, FrequencyRange range, uint8_t resetPin, uint8_t chipSelectPin, uint8_t interruptPin){
         transcieverType = type;
         reset_pin = resetPin;
+        switch(range){
+            case FrequencyRange::MHZ_433:
+                minFrequency = 424000000;
+                maxFrequency = 510000000;
+                break;
+            case FrequencyRange::MHZ_868:
+                minFrequency = 862000000;
+                maxFrequency = 890000000;
+                break;
+            case FrequencyRange::MHZ_915:
+                minFrequency = 890000000;
+                maxFrequency = 1020000000;
+                break;
+        }
         rf69 = new RH_RF69(chipSelectPin, interruptPin);
     }
 
@@ -181,7 +201,7 @@ public:
     ReceptionResult receive(uint8_t* buffer, uint8_t& length){
 
         if(!rf69->available()) return ReceptionResult::NOTHING_RECEIVED;
-
+        
         uint8_t crcPayloadSize = length + 2;
         uint8_t crcPayloadBuffer[crcPayloadSize];
 
@@ -251,8 +271,8 @@ private:
     uint8_t sentMessageCounter = 0; //incremented on each send
     uint32_t lastMessageSendTime_micros = 0;
     uint8_t reset_pin = 7;
-    const uint32_t minFrequency = 424000000;
-    const uint32_t maxFrequency = 510000000;
+    uint32_t minFrequency;
+    uint32_t maxFrequency;
     float lastRoundTripTime_ms = 0.0;
 
 };
