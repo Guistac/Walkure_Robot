@@ -14,17 +14,11 @@ private:
     uint8_t reset_pin = 7;
     uint8_t chipSelect_pin = 10;
 
-    float bandwidthKHz = 250.0; //62.5->500.0KHz
-    float frequencyMHz;
-    int spreadingFactor;
-
 public:
 
-    Radio(){
-        rf95 = new RH_RF95(chipSelect_pin, interrupt_pin);
-    }
+    Radio(){ rf95 = new RF95(chipSelect_pin, interrupt_pin); }
 
-    bool initialize(float cf, float bw, int sf){   
+    bool initialize(float bw, int sf, float cf){   
         frequencyMHz = cf;
         bandwidthKHz = bw;
         spreadingFactor = sf;
@@ -36,21 +30,22 @@ public:
         delay(10);
 
         if(!rf95->init()) {
-            Serial.println("Radio Init() Failed.");
+            Serial.println("Unable to initialize radio.");
             return false;
         }
 
+        rf95->setSignalBandwidth(bandwidthKHz * 1000);   //smaller bandwidths are better for range, larger bandwidths are better for speed
         rf95->setTxPower(23, false);  //23dBm is max
         rf95->setPayloadCRC(false);   //we'll do our own CRC manually
         rf95->setCodingRate4(5);      //5->8, default==5 lower is faster, higher is better for range, radios of different values seem to communicate with each other
-        
-        rf95->setSignalBandwidth(bandwidthKHz * 1000);   //smaller bandwidths are better for range, larger bandwidths are better for speed
-        rf95->setSpreadingFactor(spreadingFactor);  //6->12 default==7 lower is faster, higher is better for range, 6 doesn't seem to work, haven't tested higher values since they are real slow
+        rf95->setSpreadingFactor(spreadingFactor);  //6->12 default==7 lower is faster, higher is better for range, 6 works only with implicit mode which is not available, haven't tested higher values since they are real slow
 
         if(!rf95->setFrequency(frequencyMHz)){
             Serial.printf("Could not set radio Frequency to %.1fMHz\n", frequencyMHz);
             return false;
         }
+
+        rf95->setPromiscuous(true);
 
         Serial.println("Initialized Radio.");
 
@@ -58,19 +53,58 @@ public:
     }
 
     bool send(uint8_t* buffer, uint8_t length){
-        return rf95->send(buffer, length);
+        if(length <= 4) return false;
+
+        handleTxTimeout();
+
+        //if we are already in TX Mode and try to send a packet we will get stuck in waitPacketSent()
+        if(rf95->isInTxMode()) return false;
+
+        //used for measuring frame send time when debugging
+        uint32_t startMicros = micros();
+
+        rf95->setHeaderTo(buffer[0]);
+        rf95->setHeaderFrom(buffer[1]);
+        rf95->setHeaderId(buffer[3]);
+        rf95->setHeaderFlags(buffer[4], 255);
+
+        uint8_t* payloadBuffer = buffer + 4;
+        uint8_t payloadSize = length - 4; 
+
+        if(rf95->send(payloadBuffer, payloadSize)){
+            //mark down send start time to check for send timeout later
+            lastSendRequest_millis = millis();   
+
+            if(false){
+                rf95->waitPacketSent();
+                uint32_t time = micros() - startMicros;
+                float time_ms = float(time) / 1000.0;
+                Serial.printf("Send time: %.2fms %i\n", time_ms, millis());
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     bool receive(uint8_t* buffer, uint8_t length){
-        uint8_t receivedLength = length;
-        if(rf95->recv(buffer, &receivedLength)){
-            if(receivedLength != length) {
-                Serial.printf("Frame of wrong length received. (%i instead of %i)\n", receivedLength, length);
-                return false;
-            }
-            return true;
-        }
-        return false;
+        handleTxTimeout();
+
+        //if we are still in TX Mode, the radio library will refuse to switch to RX Mode
+        if(rf95->isInTxMode()) return false;
+
+        uint8_t* payloadBuffer = buffer + 4;
+        uint8_t receivedLength = length - 4;
+        if(!rf95->recv(payloadBuffer, &receivedLength)) return false;
+        if(receivedLength != length - 4) return false;
+
+        buffer[0] = rf95->headerTo();
+        buffer[1] = rf95->headerFrom();
+        buffer[2] = rf95->headerId();
+        buffer[3] = rf95->headerFlags();
+
+        return true;
     }
 
     int16_t getSignalStrength(){
@@ -80,5 +114,33 @@ public:
     float getFrequency(){ return frequencyMHz; }
 
 private:
-    RH_RF95* rf95;
+    //Make our own class derived from the RadioHead radio class
+    //this way we can peek into the protected _mode variable
+    class RF95 : public RH_RF95{
+    public:
+        RF95(uint8_t cs, uint8_t irq) : RH_RF95(cs, irq){}
+        bool isInTxMode(){ return _mode == RHMode::RHModeTx; }
+    };
+    RF95* rf95;
+
+    float bandwidthKHz;
+    float frequencyMHz;
+    int spreadingFactor;
+
+    //sometimes the radio library misses an interrupt
+    //this can cause the radio stay in TXMode and loop in waitPacketSend() or not be able to receive
+    //a quick fix for this is to manually set the radio mode back to idle mode
+    //we keep track of the time we spend in TXMode, and if that takes too long we force the radio back to idle mode
+    uint32_t lastSendRequest_millis = 0;
+    uint32_t sendTimeout_millis = 100;
+    void handleTxTimeout(){
+        if(rf95->isInTxMode() && millis() - lastSendRequest_millis > sendTimeout_millis){
+            rf95->setModeIdle();
+            lastSendRequest_millis = millis();
+
+            static int counter = 0;
+            counter++;
+            Serial.printf("%i Radio Recovery Attempt N°%i\n", millis(), counter);
+        }
+    }
 };

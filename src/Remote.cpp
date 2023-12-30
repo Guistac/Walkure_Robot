@@ -37,7 +37,7 @@ bool Remote::receiveProcessData(){
         return false;
     }
 
-    Serial.printf("Valid Frame Received (%i)\n", millis());
+    Serial.printf("%i Valid Frame Received (N°%i)\n", millis(), incomingFrame[6]);
 
     lastProcessDataReceiveMillis = millis();
     if(!b_isConnected){
