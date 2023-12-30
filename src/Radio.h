@@ -6,10 +6,14 @@
 class Radio{
 private:
 
-    uint8_t enable_pin = 35; //not used ???
-    uint8_t interrupt_pin = 34;
-    uint8_t reset_pin = 33;
+    //uint8_t interrupt_pin = 34;
+    //uint8_t reset_pin = 33;
+    //uint8_t chipSelect_pin = 10;
+
+    uint8_t interrupt_pin = 9;
+    uint8_t reset_pin = 7;
     uint8_t chipSelect_pin = 10;
+
     float bandwidthKHz = 250.0; //62.5->500.0KHz
     float frequencyMHz;
     int spreadingFactor;
@@ -63,14 +67,8 @@ public:
             if(receivedLength != length) {
                 Serial.printf("Frame of wrong length received. (%i instead of %i)\n", receivedLength, length);
                 return false;
-            }else {
-                Serial.printf("from: %i  to: %i  id: %i  flags: %i\n",
-                    rf95->headerFrom(),
-                    rf95->headerTo(),
-                    rf95->headerId(),
-                    rf95->headerFlags());
-                return true;
             }
+            return true;
         }
         return false;
     }

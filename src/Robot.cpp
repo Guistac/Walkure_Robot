@@ -61,7 +61,15 @@ namespace Robot{
 
     void initialize(Configuration& config){
 
-        //while(!Serial){}
+        if(false){
+            pinMode(13, OUTPUT);
+            while(!Serial){
+                digitalWrite(13, HIGH);
+                delay(250);
+                digitalWrite(13, LOW);
+                delay(250);
+            }
+        }
         Serial.println("———— Robot Start ————");
 
         configuration = config;

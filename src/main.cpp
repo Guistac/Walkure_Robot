@@ -122,8 +122,8 @@ Robot::Configuration closet_robot = {
 void setup(){
   //Robot::initialize(bed_robot);
   //Robot::initialize(desk_robot);
-  //Robot::initialize(fridge_robot);
-  Robot::initialize(closet_robot);
+  Robot::initialize(fridge_robot);
+  //Robot::initialize(closet_robot);
 }
 
 void loop(){
