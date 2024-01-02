@@ -73,6 +73,10 @@ public:
 
     void isr(){
 
+        if(millis() - lastVeloctyRequest_millis > velocityRequestTimeout_millis){
+            velocityTarget = 0.0;
+        }
+
         //only update motion profile on a low pulse
         if(!b_pulseState){
 
@@ -95,7 +99,6 @@ public:
 
             if(actAbs >= zeroVelocityTreshold){
                 b_stopped = false;
-                //Serial.println(velocityActual);
                 float pulseFrequency = actAbs * pulsesPerRevolution;
                 float pulseEdgeInterval_microseconds = 1000000.0 / (2.0 * pulseFrequency);
                 timer.update(pulseEdgeInterval_microseconds);
@@ -131,9 +134,12 @@ public:
         if(target > velocityLimit) velocityTarget = velocityLimit;
         else if(target < -velocityLimit) velocityTarget = -velocityLimit;
         else velocityTarget = target;
+        lastVeloctyRequest_millis = millis();
     }
 
     float getVelocityLimit(){ return velocityLimit; }
+
+    float getActualVelocity(){ return velocityActual; }
 
 private:
 
@@ -162,4 +168,7 @@ private:
     const float velocityLimit = 2.0;
     const float zeroVelocityTreshold = 0.01;
     const float minPulseFrequency = 10.0;
+
+    uint32_t lastVeloctyRequest_millis = 0;
+    uint32_t velocityRequestTimeout_millis = 100;
 };
