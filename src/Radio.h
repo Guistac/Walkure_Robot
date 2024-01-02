@@ -65,8 +65,8 @@ public:
 
         rf95->setHeaderTo(buffer[0]);
         rf95->setHeaderFrom(buffer[1]);
-        rf95->setHeaderId(buffer[3]);
-        rf95->setHeaderFlags(buffer[4], 255);
+        rf95->setHeaderId(buffer[2]);
+        rf95->setHeaderFlags(buffer[3], 255);
 
         uint8_t* payloadBuffer = buffer + 4;
         uint8_t payloadSize = length - 4; 
@@ -83,6 +83,22 @@ public:
             }
 
             return true;
+        }
+
+        if(true){
+            Serial.print("Outgoing Frame: ");
+            for(int i = length - 1; i >= 0; i--){
+                bool b0 = buffer[i] & 0x1;
+                bool b1 = buffer[i] & 0x2;
+                bool b2 = buffer[i] & 0x4;
+                bool b3 = buffer[i] & 0x8;
+                bool b4 = buffer[i] & 0x10;
+                bool b5 = buffer[i] & 0x20;
+                bool b6 = buffer[i] & 0x40;
+                bool b7 = buffer[i] & 0x80;
+                Serial.printf("%i%i%i%i%i%i%i%i ", b7, b6, b5, b4, b3, b2, b1, b0);
+            }
+            Serial.println("");
         }
 
         return false;
@@ -103,6 +119,22 @@ public:
         buffer[1] = rf95->headerFrom();
         buffer[2] = rf95->headerId();
         buffer[3] = rf95->headerFlags();
+
+        if(false){
+            Serial.print("Incoming Frame: ");
+            for(int i = length - 1; i >= 0; i--){
+                bool b0 = buffer[i] & 0x1;
+                bool b1 = buffer[i] & 0x2;
+                bool b2 = buffer[i] & 0x4;
+                bool b3 = buffer[i] & 0x8;
+                bool b4 = buffer[i] & 0x10;
+                bool b5 = buffer[i] & 0x20;
+                bool b6 = buffer[i] & 0x40;
+                bool b7 = buffer[i] & 0x80;
+                Serial.printf("%i%i%i%i%i%i%i%i ", b7, b6, b5, b4, b3, b2, b1, b0);
+            }
+            Serial.println("");
+        }
 
         return true;
     }
