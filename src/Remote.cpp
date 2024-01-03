@@ -19,12 +19,12 @@ bool Remote::receiveProcessData(){
     }
 
     uint8_t incomingFrame[11];
-    if(!Robot::radio.receive(incomingFrame, 11)) return false;
+    if(!Robot::radio.receive(incomingFrame, 10)) return false;
 
     //———— Process Data
-    uint16_t receivedCRC = incomingFrame[10] << 8 | incomingFrame[9];
+    uint16_t receivedCRC = incomingFrame[9] << 8 | incomingFrame[8];
 
-    if(receivedCRC != calcCRC16(incomingFrame, 9)) {
+    if(receivedCRC != calcCRC16(incomingFrame, 8)) {
         Serial.printf("Receive Corrupted Frame (%i)\n", millis());
         return false;
     }
@@ -59,12 +59,10 @@ bool Remote::receiveProcessData(){
     else leftJoystickY = map((float)incomingFrame[3], 0.0, 255.0, -1.0, 1.0);
     if(incomingFrame[4] == 127) rightJoystickX = 0.0;
     else rightJoystickX = map((float)incomingFrame[4], 0.0, 255.0, -1.0, 1.0);
-    if(incomingFrame[5] == 127) rightJoystickY = 0.0;
-    else rightJoystickY = map((float)incomingFrame[5], 0.0, 255.0, -1.0, 1.0);
 
-    messageCounter = incomingFrame[6];
+    messageCounter = incomingFrame[5];
 
-    uint16_t safetyNumber = incomingFrame[8] << 8 | incomingFrame[7];
+    uint16_t safetyNumber = incomingFrame[7] << 8 | incomingFrame[6];
     b_safetyClear = Safety::isNumberClear(safetyNumber);
 
     return true;
@@ -111,10 +109,10 @@ void Remote::sendProcessData(){
         }
         return s_integer + 128;
     };
-    uint8_t fl_vel = getServoVelEightBits(Robot::servoFrontLeft, false);
-    uint8_t bl_vel = getServoVelEightBits(Robot::servoBackLeft, true);
-    uint8_t fr_vel = getServoVelEightBits(Robot::servoFrontRight, false);
-    uint8_t br_vel = getServoVelEightBits(Robot::servoBackRight, true);
+    uint8_t fl_vel = getServoVelEightBits(Robot::servoFrontLeft, Robot::configuration.b_invertFLFeedback);
+    uint8_t bl_vel = getServoVelEightBits(Robot::servoBackLeft, Robot::configuration.b_invertBLFeedback);
+    uint8_t fr_vel = getServoVelEightBits(Robot::servoFrontRight, Robot::configuration.b_invertFRFeedback);
+    uint8_t br_vel = getServoVelEightBits(Robot::servoBackRight, Robot::configuration.b_invertBRFeedback);
 
     uint8_t receivedSignalStrength = Robot::radio.getSignalStrength() + 150;
     uint8_t nodeID = int(Robot::radio.getFrequency() * 10) % 255;

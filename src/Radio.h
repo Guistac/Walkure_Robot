@@ -166,7 +166,7 @@ private:
     //a quick fix for this is to manually set the radio mode back to idle mode
     //we keep track of the time we spend in TXMode, and if that takes too long we force the radio back to idle mode
     uint32_t lastSendRequest_millis = 0;
-    uint32_t sendTimeout_millis = 100;
+    uint32_t sendTimeout_millis = 60;
     void handleTxTimeout(){
         if(rf95->isInTxMode() && millis() - lastSendRequest_millis > sendTimeout_millis){
             rf95->setModeIdle();

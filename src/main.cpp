@@ -35,7 +35,11 @@ Robot::Configuration bed_robot = {
   .b_swapXYFeedback = false,
   .b_invertXFeedback = false,
   .b_invertYFeedback = false,
-  .b_invertRFeedback = false
+  .b_invertRFeedback = false,
+  .b_invertFLFeedback = false,
+  .b_invertBLFeedback = false,
+  .b_invertFRFeedback = false,
+  .b_invertBRFeedback = false
 };
 
 Robot::Configuration desk_robot = {
@@ -67,7 +71,11 @@ Robot::Configuration desk_robot = {
   .b_swapXYFeedback = false,
   .b_invertXFeedback = false,
   .b_invertYFeedback = false,
-  .b_invertRFeedback = false
+  .b_invertRFeedback = false,
+  .b_invertFLFeedback = false,
+  .b_invertBLFeedback = false,
+  .b_invertFRFeedback = false,
+  .b_invertBRFeedback = false
 };
 
 Robot::Configuration fridge_robot = {
@@ -99,7 +107,11 @@ Robot::Configuration fridge_robot = {
   .b_swapXYFeedback = false,
   .b_invertXFeedback = false,
   .b_invertYFeedback = false,
-  .b_invertRFeedback = false
+  .b_invertRFeedback = false,
+  .b_invertFLFeedback = false,
+  .b_invertBLFeedback = false,
+  .b_invertFRFeedback = false,
+  .b_invertBRFeedback = false
 };
 
 Robot::Configuration closet_robot = {
@@ -131,7 +143,11 @@ Robot::Configuration closet_robot = {
   .b_swapXYFeedback = true,
   .b_invertXFeedback = true,
   .b_invertYFeedback = false,
-  .b_invertRFeedback = false
+  .b_invertRFeedback = false,
+  .b_invertFLFeedback = false,
+  .b_invertBLFeedback = false,
+  .b_invertFRFeedback = true,
+  .b_invertBRFeedback = true
 };
 
 

@@ -78,6 +78,11 @@ namespace Robot{
         bool b_invertXFeedback = false;
         bool b_invertYFeedback = false;
         bool b_invertRFeedback = false;
+
+        bool b_invertFLFeedback = false;
+        bool b_invertBLFeedback = false;
+        bool b_invertFRFeedback = false;
+        bool b_invertBRFeedback = false;
     };
 
     extern Configuration configuration;
