@@ -61,7 +61,7 @@ namespace Robot{
 
     void initialize(Configuration& config){
 
-        if(false){
+        if(true){
             pinMode(13, OUTPUT);
             while(!Serial){
                 digitalWrite(13, HIGH);
@@ -113,9 +113,6 @@ namespace Robot{
         servoFrontRight.wheelFrictionVector_mmPerRev =  config.frontRight_wheelFrictionVector;
         servoBackRight.wheelFrictionVector_mmPerRev =   config.backRight_wheelFrictionVector;
         for(int i = 0; i < 4; i++) servoMotors[i]->disable();
-
-        pinMode(25, INPUT);
-        analogReadResolution(12);
         
         Serial.println("Robot initialized.");
     }
@@ -124,12 +121,6 @@ namespace Robot{
     void update(){
 
         for(int i = 0; i < 4; i++) servoMotors[i]->update();
-
-        //voltage divider is 460 / 10000 ohm
-        float r1 = 464.0;
-        float r2 = 9830.0;
-        batteryVoltage = map(float(analogRead(25)), 0.0, 4096.0, 0.0, 3.3) * (r1+r2) / r1;
-        //Serial.println(batteryVoltage);
 
         bool b_processDataReceived = remote.receiveProcessData();
 
