@@ -39,11 +39,6 @@ namespace Robot{
     uint32_t enableRequestMillis;
     float batteryVoltage = 0.0;
 
-    bool b_swapXandY = false;
-    bool b_invertX = false;
-    bool b_invertY = false;
-    bool b_invertR = false;
-
     State getState(){ return robotState; } 
     float getBatteryVoltage(){ return batteryVoltage; }
 
@@ -61,7 +56,7 @@ namespace Robot{
 
     void initialize(Configuration& config){
 
-        if(true){
+        if(false){
             pinMode(13, OUTPUT);
             while(!Serial){
                 digitalWrite(13, HIGH);

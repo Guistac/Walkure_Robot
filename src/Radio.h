@@ -6,13 +6,15 @@
 class Radio{
 private:
 
-    //uint8_t interrupt_pin = 34;
-    //uint8_t reset_pin = 33;
-    //uint8_t chipSelect_pin = 10;
-
-    uint8_t interrupt_pin = 9;
-    uint8_t reset_pin = 7;
+    //production board values (Teensy 4.1)
+    uint8_t interrupt_pin = 34;
+    uint8_t reset_pin = 33;
     uint8_t chipSelect_pin = 10;
+
+    //test board values (Teensy 4.0)
+    //uint8_t interrupt_pin = 9;
+    //uint8_t reset_pin = 7;
+    //uint8_t chipSelect_pin = 10;
 
 public:
 
@@ -85,7 +87,7 @@ public:
             return true;
         }
 
-        if(true){
+        if(false){
             Serial.print("Outgoing Frame: ");
             for(int i = length - 1; i >= 0; i--){
                 bool b0 = buffer[i] & 0x1;

@@ -90,9 +90,16 @@ void Remote::sendProcessData(){
     if(Robot::servoFrontRight.isEnabled())  motorStatusWord |= 0x40;
     if(Robot::servoBackRight.isEnabled())   motorStatusWord |= 0x80;
 
-    int8_t xVelocity = map(MotionControl::getXVelocityNormalized(), -1.0, 1.0, -127, 127);
-    int8_t yVelocity = map(MotionControl::getYVelocityNormalized(), -1.0, 1.0, -127, 127);
-    int8_t rVelocity = map(MotionControl::getRotationalVelocityNormalized(), -1.0, 1.0, -127, 127);
+    float xVel_f = MotionControl::getXVelocityNormalized();
+    float yVel_f = MotionControl::getYVelocityNormalized();
+    float rVel_f = MotionControl::getRotationalVelocityNormalized();
+    if(Robot::configuration.b_swapXYFeedback) std::swap(xVel_f, yVel_f);
+    if(Robot::configuration.b_invertRFeedback) rVel_f = -rVel_f;
+    if(Robot::configuration.b_invertXFeedback) xVel_f = -xVel_f;
+    if(Robot::configuration.b_invertYFeedback) yVel_f = -yVel_f;
+    int8_t xVelocity = map(xVel_f, -1.0, 1.0, -127, 127);
+    int8_t yVelocity = map(yVel_f, -1.0, 1.0, -127, 127);
+    int8_t rVelocity = map(rVel_f, -1.0, 1.0, -127, 127);
 
     auto getServoVelEightBits = [](ServoMotor& servo, bool invert)->uint8_t{
         float norm = servo.getActualVelocity() / servo.getVelocityLimit();

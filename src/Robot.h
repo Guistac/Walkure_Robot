@@ -40,6 +40,7 @@ namespace Robot{
     extern ServoMotor* servoMotors[4];
 
 
+
     struct Configuration{
 
         double radioFrequency_MHz = 434.0;
@@ -72,7 +73,14 @@ namespace Robot{
         bool b_invertX = false;
         bool b_invertY = false;
         bool b_invertR = false;
+
+        bool b_swapXYFeedback = false;
+        bool b_invertXFeedback = false;
+        bool b_invertYFeedback = false;
+        bool b_invertRFeedback = false;
     };
+
+    extern Configuration configuration;
 
 
     void initialize(Configuration& config);
