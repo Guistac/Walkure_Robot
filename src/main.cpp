@@ -33,13 +33,13 @@ Robot::Configuration bed_robot = {
   .b_invertY = false,
   .b_invertR = false,
   .b_swapXYFeedback = false,
-  .b_invertXFeedback = false,
-  .b_invertYFeedback = false,
-  .b_invertRFeedback = false,
+  .b_invertXFeedback = true,
+  .b_invertYFeedback = true,
+  .b_invertRFeedback = true,
   .b_invertFLFeedback = false,
   .b_invertBLFeedback = false,
-  .b_invertFRFeedback = false,
-  .b_invertBRFeedback = false
+  .b_invertFRFeedback = true,
+  .b_invertBRFeedback = true
 };
 
 Robot::Configuration desk_robot = {
@@ -65,17 +65,17 @@ Robot::Configuration desk_robot = {
   .frontRight_wheelFrictionVector = Vec2f(frictionVectorUnit, -frictionVectorUnit),
   .backRight_wheelFrictionVector = Vec2f(-frictionVectorUnit, -frictionVectorUnit),
   .b_swapXandY = false,
-  .b_invertX = false,
-  .b_invertY = false,
+  .b_invertX = true,
+  .b_invertY = true,
   .b_invertR = false,
   .b_swapXYFeedback = false,
-  .b_invertXFeedback = false,
+  .b_invertXFeedback = true,
   .b_invertYFeedback = false,
-  .b_invertRFeedback = false,
+  .b_invertRFeedback = true,
   .b_invertFLFeedback = false,
   .b_invertBLFeedback = false,
-  .b_invertFRFeedback = false,
-  .b_invertBRFeedback = false
+  .b_invertFRFeedback = true,
+  .b_invertBRFeedback = true
 };
 
 Robot::Configuration fridge_robot = {
@@ -104,12 +104,12 @@ Robot::Configuration fridge_robot = {
   .b_invertX = false,
   .b_invertY = false,
   .b_invertR = true,
-  .b_swapXYFeedback = false,
+  .b_swapXYFeedback = true,
   .b_invertXFeedback = false,
-  .b_invertYFeedback = false,
+  .b_invertYFeedback = true,
   .b_invertRFeedback = false,
-  .b_invertFLFeedback = false,
-  .b_invertBLFeedback = false,
+  .b_invertFLFeedback = true,
+  .b_invertBLFeedback = true,
   .b_invertFRFeedback = false,
   .b_invertBRFeedback = false
 };
@@ -154,8 +154,8 @@ Robot::Configuration closet_robot = {
 void setup(){
   //Robot::initialize(bed_robot);
   //Robot::initialize(desk_robot);
-  //Robot::initialize(fridge_robot);
-  Robot::initialize(closet_robot);
+  Robot::initialize(fridge_robot);
+  //Robot::initialize(closet_robot);
 }
 
 void loop(){
