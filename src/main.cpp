@@ -7,7 +7,7 @@ double wheelCircumference_mm = PI * wheelDiameter_mm;
 float frictionVectorUnit = sin(45.0) * wheelCircumference_mm;
 
 Robot::Configuration bed_robot = {
-  .radioFrequency_MHz = 520.0,
+  .radioFrequency_MHz = 480.0,
   .radioBandwidth_KHz = 250.0,
   .radioSpreadingFactor = 8,
   .highSetting_translationVelocitLimit = 400.0,
@@ -152,9 +152,9 @@ Robot::Configuration closet_robot = {
 
 
 void setup(){
-  //Robot::initialize(bed_robot);
+  Robot::initialize(bed_robot);
   //Robot::initialize(desk_robot);
-  Robot::initialize(fridge_robot);
+  //Robot::initialize(fridge_robot);
   //Robot::initialize(closet_robot);
 }
 
